@@ -1,18 +1,20 @@
 # Anki-Markdown-Notes
 
-This is an [Anki](https://apps.ankiweb.net/) [add-on](https://ankiweb.net/shared/addons/) that extracts notes from a markdown file and imports it to Anki. This add-on is meant to be used when maintaining all notes using Markdown files only - any edits made from Anki will be lost the next time this add-on is used. Major advantages of doing so:
+This is an [Anki](https://apps.ankiweb.net/) [add-on](https://ankiweb.net/shared/addons/) that extracts notes from markdown files and imports them to Anki. This add-on is meant to be used when maintaining all notes using Markdown files only - any edits made from Anki will be lost the next time this add-on is used. Major advantages of doing so:
 - easily see all notes from each deck at the same place
 - easy to add notes in bulk into Anki when covering a lot of new material
 - maintain additional material that doesn't have to go into Anki along with Anki notes
 - version control the notes since they are now markdown files
 
->Only these two built-in models are supported for now - `Basic` and `Basic (and reversed card)`
+>Only these two built-in models are supported for now - `Basic` and `Basic (and reversed card)`          
 >Media (images/audio) is not supported.
 
 
 ## Installation
 
-Open your add-ons folder by selecting "Tools -> Add-Ons -> Open Add-Ons Folder" and simply pasting the anki-markdown.py file into it.
+To download and install directly from [Ankiweb](https://ankiweb.net/shared/info/2141874715), please copy and paste the following code into the desktop program: 2141874715
+
+Alternatively, open your add-ons folder by selecting "Tools -> Add-Ons -> Open Add-Ons Folder" and simply pasting the anki-markdown.py file into it.
 
 ## Usage
 
