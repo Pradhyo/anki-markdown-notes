@@ -61,8 +61,7 @@ def modifyNote(front, back, id):
         return None
     note.fields[0] = front
     note.fields[1] = back
-    mw.col.addNote(note)
-    mw.col.save()
+    note.flush()
     return note.id
 
 def isIDComment(line):
