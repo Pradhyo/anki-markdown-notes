@@ -6,7 +6,7 @@ This is an [Anki](https://apps.ankiweb.net/) [add-on](https://ankiweb.net/shared
 - maintain additional material that doesn't have to go into Anki along with Anki notes
 - version control the notes since they are now markdown files
 
->Only these two built-in models are supported for now - `Basic` and `Basic (and reversed card)`          
+>Only these two built-in models are supported for now - `Basic` and `Basic (and reversed card)`
 >Media (images/audio) is not supported.
 
 
@@ -25,17 +25,19 @@ To start using this add-on, first extract all existing notes into markdown by se
 Create a Notes folder wherever you want the notes to be and follow the below conventions. Then select "Tools -> Import from Markdown Notes" in the Anki desktop app to import them into Anki.
 
 ## Conventions
-The file structure of the Markdown files is shown below.              
-All notes extracted from the root folder are added to the Default deck - in the below case, notes from random.md go to the Default deck. Everything in a sub-folder goes to a deck named after that subfolder - here notes from socket.md and files.md go into the python deck.
+The file structure of the Markdown files is shown below.
+- All notes extracted from the root folder are added to the Default deck. In the below case, notes from random.md go to the Default deck.
+- Everything in a sub-folder goes to a deck named after that subfolder - here notes from socket.md and files.md go into the python deck.
+- The filename is set as a tag for each note in a file - here all notes from socket.md are assigned a tag 'socket'
 
 ```
 Notes
-│   algorithms.md  
+│   algorithms.md
 │
 └───python
 │   │   socket.md
 │   │   files.md
-│   
+│
 └───tools
     │   git.md
     │   tmux.md
@@ -49,7 +51,7 @@ A: - Answer line 1
 - Answer line 2
 ```
 
-This creates a basic card with `Question` as the front of the card and 
+This creates a basic card with `Question` as the front of the card and
 ```
 Answer line 1
 Answer line 2
@@ -68,5 +70,5 @@ A: - Answer line 1
 Sample Notes are in the **[Notes](https://github.com/Pradhyo/anki-markdown-notes/tree/master/Notes)** folder.
 
 ## Development
-All the code is in the single **[anki-markdown.py](https://github.com/Pradhyo/anki-markdown-notes/blob/master/anki-markdown.py)** file.       
+All the code is in the single **[anki-markdown.py](https://github.com/Pradhyo/anki-markdown-notes/blob/master/anki-markdown.py)** file.
 Going through the [docs](https://apps.ankiweb.net/docs/addons.html) first is highly recommended. In the markdown files, id comments are added as soon as a note is imported successfully into anki - this will ensure any changes to the note in the markdown file edits the same anki note.
