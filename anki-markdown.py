@@ -26,7 +26,7 @@ def processAllNotes(NotesPath):
                                    + processFile(markdownFile, folderName))
     return deckCounter
 
-def addNote(front, back, model, deck):
+def addNote(front, back, tag, model, deck):
     """
     Add note with `front` and `back` to `deck` using `model`.
     If `deck` doesn't exist, it is created.
@@ -47,11 +47,12 @@ def addNote(front, back, model, deck):
 
     note.fields[0] = front
     note.fields[1] = back
+    note.addTag(tag)
     mw.col.addNote(note)
     mw.col.save()
     return note.id
 
-def modifyNote(front, back, id):
+def modifyNote(front, back, tag, id):
     """
     Get note with id and update `front` and `back`.
     If note with id is not found, do nothing.
@@ -61,6 +62,7 @@ def modifyNote(front, back, id):
         return None
     note.fields[0] = front
     note.fields[1] = back
+    note.addTag(tag)
     note.flush()
     return note.id
 
@@ -92,6 +94,7 @@ def processFile(file, deck="Default"):
     currentID = ""
     toWrite = [] # buffer to store lines while processing a Note
     counter = 0
+    tag = os.path.basename(file).split('.')[0] # get filename and ignores extension
 
     def handleNote():
         """
@@ -101,12 +104,12 @@ def processFile(file, deck="Default"):
             return
         frontText, backText = "<br>".join(front), "<br>".join(back)
         if currentID:
-            newID = modifyNote(frontText, backText, currentID)
+            newID = modifyNote(frontText, backText, tag, currentID)
             if newID:
                 # Overwrite in case format was off
                 toWrite[-2] = ("<!-- {} -->\n".format(currentID))
         else:
-            newID = addNote(frontText, backText, model, deck)
+            newID = addNote(frontText, backText, tag, model, deck)
             if newID:
                 toWrite.insert(len(toWrite)-1, "<!-- {} -->\n".format(newID))
         tempFile.writelines(toWrite)
