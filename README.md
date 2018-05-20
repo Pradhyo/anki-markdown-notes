@@ -28,7 +28,7 @@ Create a Notes folder wherever you want the notes to be and follow the below con
 The file structure of the Markdown files is shown below.
 - All notes extracted from the root folder are added to the Default deck. In the below case, notes from random.md go to the Default deck.
 - Everything in a sub-folder goes to a deck named after that subfolder - here notes from socket.md and files.md go into the python deck.
-- The filename is set as a tag for each note in a file - here all notes from socket.md are assigned a tag 'socket'
+- The filename is set as a tag for each note in a file - here all notes from socket.md are assigned a tag 'socket'. The tag can be used used in the [card templates as shown here](https://apps.ankiweb.net/docs/manual.html#special-fields).
 
 ```
 Notes
