@@ -26,11 +26,12 @@ def processAllNotes(NotesPath):
                                    + processFile(markdownFile, folderName))
     return deckCounter
 
-def addNote(front, back, tag, model, deck):
+def addNote(front, back, tag, model, deck, id=None):
     """
     Add note with `front` and `back` to `deck` using `model`.
     If `deck` doesn't exist, it is created.
     If `model` doesn't exist, nothing is done.
+    If `id` is passed, it is used as the id
     """
     model = mw.col.models.byName(model)
     if model:
@@ -38,7 +39,7 @@ def addNote(front, back, tag, model, deck):
     else:
         return None
 
-    # Creates are reuses deck with name passed using `deck`
+    # Creates or reuses deck with name passed using `deck`
     did = mw.col.decks.id(deck)
     deck = mw.col.decks.get(did)
 
@@ -47,19 +48,19 @@ def addNote(front, back, tag, model, deck):
 
     note.fields[0] = front
     note.fields[1] = back
+
+    if id:
+        note.id = id
     note.addTag(tag)
     mw.col.addNote(note)
     mw.col.save()
     return note.id
 
-def modifyNote(front, back, tag, id):
+def modifyNote(note, front, back, tag):
     """
-    Get note with id and update `front` and `back`.
+    Modifies given note with given `front`, `back` and `tag`.
     If note with id is not found, do nothing.
     """
-    note = mw.col.getNote(id)
-    if not note:
-        return None
     note.fields[0] = front
     note.fields[1] = back
     note.addTag(tag)
@@ -104,7 +105,13 @@ def processFile(file, deck="Default"):
             return
         frontText, backText = "<br>".join(front), "<br>".join(back)
         if currentID:
-            newID = modifyNote(frontText, backText, tag, currentID)
+            newID = None
+            try:
+                note = mw.col.getNote(currentID)
+                newID = modifyNote(note, frontText, backText, tag)
+            except:
+                newID = addNote(frontText, backText, tag, model, deck, currentID)
+
             if newID:
                 # Overwrite in case format was off
                 toWrite[-2] = ("<!-- {} -->\n".format(currentID))
