@@ -16,14 +16,23 @@ def processAllNotes(NotesPath):
     Notes in subfolders go to a deck named after the corresponding subfolder.
     Any folders in the subfolder are ignored.
     """
+
     deckCounter = {}
+    existingNoteIDs = set()
     for markdownFile in glob(os.path.join(NotesPath, "*.md")):
+        existingNotesInFile = processFile(markdownFile, "Default")
         deckCounter["Default"] = (deckCounter.get("Default", 0)
-                                  + processFile(markdownFile, "Default"))
+                                  + len(existingNotesInFile))
+        existingNoteIDs.update(existingNotesInFile)
     for markdownFile in glob(os.path.join(NotesPath, "*", "*.md")):
         folderName = (os.path.basename(os.path.dirname(markdownFile)))
+        existingNotesInFile = processFile(markdownFile, folderName)
         deckCounter[folderName] = (deckCounter.get(folderName, 0)
-                                   + processFile(markdownFile, folderName))
+                                   + len(existingNotesInFile))
+        existingNoteIDs.update(existingNotesInFile)
+
+    deckCounter["DELETED"] = deleteNotes(existingNoteIDs)
+
     return deckCounter
 
 def addNote(front, back, tag, model, deck, id=None):
@@ -94,8 +103,8 @@ def processFile(file, deck="Default"):
     deck = deck
     currentID = ""
     toWrite = [] # buffer to store lines while processing a Note
-    counter = 0
     tag = os.path.basename(file).split('.')[0] # get filename and ignores extension
+    existingNotesInFile = set() # notes in Anki not in this will be deleted at the end
 
     def handleNote():
         """
@@ -121,6 +130,7 @@ def processFile(file, deck="Default"):
                 toWrite.insert(len(toWrite)-1, "<!-- {} -->\n".format(newID))
         tempFile.writelines(toWrite)
         if newID:
+            existingNotesInFile.add(newID)
             return True # successfully handled Note
 
     tempFilePath = file + ".temp"
@@ -138,8 +148,7 @@ def processFile(file, deck="Default"):
 
                 toWrite.append(line)
                 if not line.strip():
-                    if handleNote():
-                        counter += 1
+                    handleNote()
                     toWrite = []
                     front = []
                     back = []
@@ -165,11 +174,29 @@ def processFile(file, deck="Default"):
                 # Append new line so id comment is on the next line
                 toWrite[-1] = toWrite[-1].strip() + "\n"
             toWrite.append("\n")
-            if handleNote():
-                counter += 1
+            handleNote()
     os.remove(file)
     os.rename(tempFilePath, file)
-    return counter
+    return existingNotesInFile
+
+
+def deleteNotes(existingNoteIDs):
+    """
+    Deletes notes in Anki that aren't in the passed list of `existingNoteIDs`
+    """
+    notesToDelete = set()
+    numDeleted = 0
+    allDecks = mw.col.decks.allNames()
+    for deck in allDecks:
+        for cid in mw.col.findNotes("deck:" + deck):
+            # cid is of type long but existingNoteIDs are string
+            if str(cid) not in existingNoteIDs:
+                notesToDelete.add(cid)
+                numDeleted += 1
+
+    mw.col.remNotes(notesToDelete)
+    return numDeleted
+
 
 def exportAllNotes(NotesPath):
     """
