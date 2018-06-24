@@ -14,7 +14,7 @@ This is an [Anki](https://apps.ankiweb.net/) [add-on](https://ankiweb.net/shared
 
 To download and install directly from [Ankiweb](https://ankiweb.net/shared/info/2141874715), please copy and paste the following code into the desktop program: 2141874715
 
-Alternatively, open your add-ons folder by selecting "Tools -> Add-Ons -> Open Add-Ons Folder" and simply pasting the [anki-markdown.py](https://github.com/Pradhyo/anki-markdown-notes/blob/master/anki-markdown.py) file into it.
+Alternatively, open your add-ons folder by selecting "Tools -> Add-Ons -> Open Add-Ons Folder" and simply paste the [anki-markdown.py](https://github.com/Pradhyo/anki-markdown-notes/blob/master/anki-markdown.py) file into it.
 
 ## Usage
 
