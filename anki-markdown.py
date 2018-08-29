@@ -2,12 +2,23 @@ from aqt import mw
 from aqt.utils import showInfo
 from aqt.qt import *
 
-import re
+import datetime
 from glob import glob
+import logging
 import os
+import re
 
 BASIC_MODEL = "Basic"
 REVERSE_MODEL = "Basic (and reversed card)"
+
+# Uncomment below to enable logging, o/w logs will go to stderr, and not be shown
+"""
+now_string = datetime.datetime.now().strftime("%y%m%d-%H:%M:%S")
+directory = '/'  # specify a directory other than root here
+logging.basicConfig(filename='{}anki-markdown-{}.log'.format(directory, now_string),
+                    level=logging.DEBUG)
+logging.debug('Logging debug messages at {}'.format(now_string))
+"""
 
 
 def processAllNotes(NotesPath):
@@ -97,38 +108,6 @@ def getIDfromComment(line):
     return idPattern.findall(line)[0]
 
 
-def handleNote():
-    """
-    Determines if current note is new or existing and acts appropriately.
-    """
-    if not (front and back):
-        return
-    frontText, backText = "<br>".join(front), "<br>".join(back)
-
-    if currentID:
-        newID = None
-        try:
-            note = mw.col.getNote(currentID)
-            newID = modifyNote(note, frontText, backText, tag)
-        except:
-            newID = addNote(frontText, backText, tag, model, deck, currentID)
-
-        if newID:
-            # Overwrite in case format was off
-            toWrite[-2] = ("<!-- {} -->\n".format(currentID))
-
-    else:
-        newID = addNote(frontText, backText, tag, model, deck)
-        if newID:
-            toWrite.insert(len(toWrite) - 1, "<!-- {} -->\n".format(newID))
-
-    tempFile.writelines(toWrite)
-
-    if newID:
-        existingNotesInFile.add(newID)
-        return True # successfully handled Note
-
-
 def processFile(file, deck="Default"):
     """
     Go through one markdown file, extract notes and load into Anki collection.
@@ -143,6 +122,44 @@ def processFile(file, deck="Default"):
     toWrite = []  # buffer to store lines while processing a Note
     tag = os.path.basename(file).split('.')[0]  # get filename and ignores extension
     existingNotesInFile = set()  # notes in Anki not in this will be deleted at the end
+
+    def handleNote():
+        """
+        Determines if current note is new or existing and acts appropriately.
+        """
+        if not (front and back):
+            return
+
+        frontText, backText = "<br>".join(front), "<br>".join(back)
+        logging.debug('Importing front text: \n{}'.format(frontText))
+        logging.debug('Importing back text: \n{}'.format(backText))
+
+        # handle special ascii characters
+        frontText = frontText.decode('utf-8')
+        backText = backText.decode('utf-8')
+
+        if currentID:
+            newID = None
+            try:
+                note = mw.col.getNote(currentID)
+                newID = modifyNote(note, frontText, backText, tag)
+            except:
+                newID = addNote(frontText, backText, tag, model, deck, currentID)
+
+            if newID:
+                # Overwrite in case format was off
+                toWrite[-2] = ("<!-- {} -->\n".format(currentID))
+
+        else:
+            newID = addNote(frontText, backText, tag, model, deck)
+            if newID:
+                toWrite.insert(len(toWrite) - 1, "<!-- {} -->\n".format(newID))
+
+        tempFile.writelines(toWrite)
+
+        if newID:
+            existingNotesInFile.add(newID)
+            return True  # successfully handled Note
 
     tempFilePath = file + ".temp"
     with open(file, "r") as originalFile:
@@ -207,6 +224,31 @@ def deleteNotes(existingNoteIDs):
     return numDeleted
 
 
+def writeNote(note, deckFile):
+    """
+    Write lines to the markdown file from the note object.
+    '<br>' in the front/back are converted to '\n'
+    """
+    if note.model()["name"] == BASIC_MODEL:
+        qPrefix = "Q:"
+    elif note.model()["name"] == REVERSE_MODEL:
+        qPrefix = "QA:"
+    else:
+        return  # Unsupported model
+
+    note_front = note.fields[0].replace("<br>", "\n").encode('utf-8')
+    logging.debug('Writing front of note:\n{}\n'.format(note_front))
+    deckFile.write("{} {}\n".format(qPrefix, note_front))
+
+    note_back = note.fields[1].replace("<br>", "\n").encode('utf-8')
+    logging.debug('Writing back of note:\n{}\n'.format(note_back))
+    deckFile.write("A: {}\n".format(note_back))
+
+    # note_back = "A: {}\n".format(note.fields[1].replace("<br>", "\n"))
+    # deckFile.write(note_back.encode('utf-8'))
+    deckFile.write("<!-- {} -->\n\n".format(note.id))
+
+
 def exportAllNotes(NotesPath):
     """
     Exports all notes to markdown files in a Notes folder in 'NotesPath'.
@@ -219,22 +261,6 @@ def exportAllNotes(NotesPath):
         showInfo("Aborting - 'Notes' folder already exists")
         return
 
-    def writeNote(note):
-        """
-        Write lines to the markdown file from the note object.
-        '<br>' in the front/back are converted to '\n'
-        """
-        if note.model()["name"] == BASIC_MODEL:
-            qPrefix = "Q:"
-        elif note.model()["name"] == REVERSE_MODEL:
-            qPrefix = "QA:"
-        else:
-            return  # Unsupported model
-        deckFile.write("{} {}\n".format(qPrefix,
-                                        note.fields[0].replace("<br>", "\n")))
-        deckFile.write("A: {}\n".format(note.fields[1].replace("<br>", "\n")))
-        deckFile.write("<!-- {} -->\n\n".format(note.id))
-
     os.makedirs(NotesPath)
     allDecks = mw.col.decks.allNames()
     for deck in allDecks:
@@ -244,7 +270,7 @@ def exportAllNotes(NotesPath):
             deckFile.write("# {} \n\n".format(deck))
             for cid in mw.col.findNotes("deck:" + deck):
                 note = mw.col.getNote(cid)
-                writeNote(note)
+                writeNote(note, deckFile)
 
     return allDecks
 
