@@ -9,6 +9,7 @@ import os
 BASIC_MODEL = "Basic"
 REVERSE_MODEL = "Basic (and reversed card)"
 
+
 def processAllNotes(NotesPath):
     """
     Read all markdown notes in `NotesPath` and load into Anki collection.
@@ -21,19 +22,20 @@ def processAllNotes(NotesPath):
     existingNoteIDs = set()
     for markdownFile in glob(os.path.join(NotesPath, "*.md")):
         existingNotesInFile = processFile(markdownFile, "Default")
-        deckCounter["Default"] = (deckCounter.get("Default", 0)
-                                  + len(existingNotesInFile))
+        deckCounter["Default"] = (deckCounter.get("Default", 0) +
+                                  len(existingNotesInFile))
         existingNoteIDs.update(existingNotesInFile)
     for markdownFile in glob(os.path.join(NotesPath, "*", "*.md")):
         folderName = (os.path.basename(os.path.dirname(markdownFile)))
         existingNotesInFile = processFile(markdownFile, folderName)
-        deckCounter[folderName] = (deckCounter.get(folderName, 0)
-                                   + len(existingNotesInFile))
+        deckCounter[folderName] = (deckCounter.get(folderName, 0) +
+                                   len(existingNotesInFile))
         existingNoteIDs.update(existingNotesInFile)
 
     deckCounter["DELETED"] = deleteNotes(existingNoteIDs)
 
     return deckCounter
+
 
 def addNote(front, back, tag, model, deck, id=None):
     """
@@ -65,6 +67,7 @@ def addNote(front, back, tag, model, deck, id=None):
     mw.col.save()
     return note.id
 
+
 def modifyNote(note, front, back, tag):
     """
     Modifies given note with given `front`, `back` and `tag`.
@@ -76,12 +79,14 @@ def modifyNote(note, front, back, tag):
     note.flush()
     return note.id
 
+
 def isIDComment(line):
     """
     Check if line matches this format <!-- 1510862771508 -->
     """
     idCommentPattern = re.compile("<!-{2,} *\d{13,} *-{2,}>")
     return True if idCommentPattern.search(line) else False
+
 
 def getIDfromComment(line):
     """
@@ -91,56 +96,60 @@ def getIDfromComment(line):
     idPattern = re.compile("\d{13,}")
     return idPattern.findall(line)[0]
 
+
+def handleNote():
+    """
+    Determines if current note is new or existing and acts appropriately.
+    """
+    if not (front and back):
+        return
+    frontText, backText = "<br>".join(front), "<br>".join(back)
+
+    if currentID:
+        newID = None
+        try:
+            note = mw.col.getNote(currentID)
+            newID = modifyNote(note, frontText, backText, tag)
+        except:
+            newID = addNote(frontText, backText, tag, model, deck, currentID)
+
+        if newID:
+            # Overwrite in case format was off
+            toWrite[-2] = ("<!-- {} -->\n".format(currentID))
+
+    else:
+        newID = addNote(frontText, backText, tag, model, deck)
+        if newID:
+            toWrite.insert(len(toWrite) - 1, "<!-- {} -->\n".format(newID))
+
+    tempFile.writelines(toWrite)
+
+    if newID:
+        existingNotesInFile.add(newID)
+        return True # successfully handled Note
+
+
 def processFile(file, deck="Default"):
     """
     Go through one markdown file, extract notes and load into Anki collection.
     Writes everything to a .temp file and adds ID comments as necessary.
     Once processing is done, the .temp file is moved to the original file.
     """
-    front = [] # list of lines that make up the front of the card
-    back = [] # list of lines that make up the back of the card
+    front = []  # list of lines that make up the front of the card
+    back = []  # list of lines that make up the back of the card
     model = None
     deck = deck
     currentID = ""
-    toWrite = [] # buffer to store lines while processing a Note
-    tag = os.path.basename(file).split('.')[0] # get filename and ignores extension
-    existingNotesInFile = set() # notes in Anki not in this will be deleted at the end
-
-    def handleNote():
-        """
-        Determines if current note is new or existing and acts appropriately.
-        """
-        if not (front and back):
-            return
-        frontText, backText = "<br>".join(front), "<br>".join(back)
-        if currentID:
-            newID = None
-            try:
-                note = mw.col.getNote(currentID)
-                newID = modifyNote(note, frontText, backText, tag)
-            except:
-                newID = addNote(frontText, backText, tag, model, deck, currentID)
-
-            if newID:
-                # Overwrite in case format was off
-                toWrite[-2] = ("<!-- {} -->\n".format(currentID))
-        else:
-            newID = addNote(frontText, backText, tag, model, deck)
-            if newID:
-                toWrite.insert(len(toWrite)-1, "<!-- {} -->\n".format(newID))
-        tempFile.writelines(toWrite)
-        if newID:
-            existingNotesInFile.add(newID)
-            return True # successfully handled Note
+    toWrite = []  # buffer to store lines while processing a Note
+    tag = os.path.basename(file).split('.')[0]  # get filename and ignores extension
+    existingNotesInFile = set()  # notes in Anki not in this will be deleted at the end
 
     tempFilePath = file + ".temp"
     with open(file, "r") as originalFile:
         with open(tempFilePath, "w") as tempFile:
             for line in originalFile:
 
-                if not (line.startswith("Q:")
-                        or line.startswith("QA:")
-                        or toWrite):
+                if not (line.startswith("Q:") or line.startswith("QA:") or toWrite):
                     tempFile.write(line)
                     continue
 
@@ -220,7 +229,7 @@ def exportAllNotes(NotesPath):
         elif note.model()["name"] == REVERSE_MODEL:
             qPrefix = "QA:"
         else:
-            return # Unsupported model
+            return  # Unsupported model
         deckFile.write("{} {}\n".format(qPrefix,
                                         note.fields[0].replace("<br>", "\n")))
         deckFile.write("A: {}\n".format(note.fields[1].replace("<br>", "\n")))
