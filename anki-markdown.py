@@ -5,20 +5,19 @@ from aqt.qt import *
 import datetime
 from glob import glob
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 import re
 
 BASIC_MODEL = "Basic"
 REVERSE_MODEL = "Basic (and reversed card)"
 
-# Uncomment below to enable logging, o/w logs will go to stderr, and not be shown
-"""
-now_string = datetime.datetime.now().strftime("%y%m%d-%H:%M:%S")
-directory = '/'  # specify a directory other than root here
-logging.basicConfig(filename='{}anki-markdown-{}.log'.format(directory, now_string),
-                    level=logging.DEBUG)
-logging.debug('Logging debug messages at {}'.format(now_string))
-"""
+directory = os.path.dirname(os.path.realpath(__file__))
+logger = logging.getLogger("Anki Markdown Notes Log")
+logger.setLevel(logging.DEBUG)
+handler = RotatingFileHandler('{}/anki-markdown.log'.format(directory),
+                              maxBytes=10**6, backupCount=5)
+logger.addHandler(handler)
 
 
 def processAllNotes(NotesPath):
@@ -28,6 +27,8 @@ def processAllNotes(NotesPath):
     Notes in subfolders go to a deck named after the corresponding subfolder.
     Any folders in the subfolder are ignored.
     """
+
+    showInfo("Logs are located here - " + directory)
 
     deckCounter = {}
     existingNoteIDs = set()
@@ -131,8 +132,8 @@ def processFile(file, deck="Default"):
             return
 
         frontText, backText = "<br>".join(front), "<br>".join(back)
-        logging.debug('Importing front text: \n{}'.format(frontText))
-        logging.debug('Importing back text: \n{}'.format(backText))
+        logger.debug('Importing front text: \n{}'.format(frontText))
+        logger.debug('Importing back text: \n{}'.format(backText))
 
         # handle special ascii characters
         frontText = frontText.decode('utf-8')
@@ -237,11 +238,11 @@ def writeNote(note, deckFile):
         return  # Unsupported model
 
     note_front = note.fields[0].replace("<br>", "\n").encode('utf-8')
-    logging.debug('Writing front of note:\n{}\n'.format(note_front))
+    logger.debug('Writing front of note:\n{}\n'.format(note_front))
     deckFile.write("{} {}\n".format(qPrefix, note_front))
 
     note_back = note.fields[1].replace("<br>", "\n").encode('utf-8')
-    logging.debug('Writing back of note:\n{}\n'.format(note_back))
+    logger.debug('Writing back of note:\n{}\n'.format(note_back))
     deckFile.write("A: {}\n".format(note_back))
 
     # note_back = "A: {}\n".format(note.fields[1].replace("<br>", "\n"))
@@ -256,6 +257,7 @@ def exportAllNotes(NotesPath):
     For deck 'DeckName', a folder 'DeckName' is created and all the notes
     in that deck are stored in 'DeckName.md' in that folder.
     """
+    showInfo("Logs are located here - " + directory)
     NotesPath = os.path.join(NotesPath, "Notes")
     if os.path.exists(NotesPath):
         showInfo("Aborting - 'Notes' folder already exists")
