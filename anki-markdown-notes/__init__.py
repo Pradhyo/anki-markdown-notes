@@ -73,7 +73,7 @@ def addNote(front, back, tag, model, deck, id=None):
     note.fields[1] = back
 
     if id:
-        note.id = id
+        note.id = int(id)
     note.addTag(tag)
     mw.col.addNote(note)
     mw.col.save()
@@ -136,20 +136,23 @@ def processFile(file, deck="Default"):
         logger.debug('Importing back text: \n{}'.format(backText))
 
         # handle special ascii characters
-        frontText = frontText.decode('utf-8')
-        backText = backText.decode('utf-8')
+        try:
+            frontText = frontText.decode('utf-8')
+            backText = backText.decode('utf-8')
+        except AttributeError:
+            pass
 
         if currentID:
             newID = None
             try:
-                note = mw.col.getNote(currentID)
+                note = mw.col.getNote(int(currentID))
                 newID = modifyNote(note, frontText, backText, tag)
             except:
-                newID = addNote(frontText, backText, tag, model, deck, currentID)
+                newID = addNote(frontText, backText, tag, model, deck)
 
             if newID:
                 # Overwrite in case format was off
-                toWrite[-2] = ("<!-- {} -->\n".format(currentID))
+                toWrite[-2] = ("<!-- {} -->\n".format(newID))
 
         else:
             newID = addNote(frontText, backText, tag, model, deck)
@@ -216,8 +219,7 @@ def deleteNotes(existingNoteIDs):
     allDecks = mw.col.decks.allNames()
     for deck in allDecks:
         for cid in mw.col.findNotes("deck:" + deck):
-            # cid is of type long but existingNoteIDs are string
-            if str(cid) not in existingNoteIDs:
+            if cid not in existingNoteIDs:
                 notesToDelete.add(cid)
                 numDeleted += 1
 
