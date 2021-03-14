@@ -109,6 +109,13 @@ def getIDfromComment(line):
     return idPattern.findall(line)[0]
 
 
+def formattedLine(line):
+    """
+    Return line using &nbsp; so they show up correctly in Anki
+    """
+    return line.replace("  ", "&nbsp; ").strip()
+
+
 def processFile(file, deck="Default"):
     """
     Go through one markdown file, extract notes and load into Anki collection.
@@ -188,21 +195,21 @@ def processFile(file, deck="Default"):
 
                 if line.startswith("Q:"):
                     model = BASIC_MODEL
-                    front.append(line[2:].strip())
+                    front.append(formattedLine(line[2:]))
                 elif line.startswith("QA:"):
                     model = REVERSE_MODEL
-                    front.append(line[3:].strip())
+                    front.append(formattedLine(line[3:]))
                 elif isIDComment(line):
                     currentID = getIDfromComment(line)
                 elif line.startswith("A:"):
-                    back.append(line[2:].strip())
+                    back.append(formattedLine(line[2:]))
                 elif not back:
-                    front.append(line.strip())
+                    front.append(formattedLine(line))
                 else:
-                    back.append(line.strip())
+                    back.append(formattedLine(line))
             if toWrite:
                 # Append new line so id comment is on the next line
-                toWrite[-1] = toWrite[-1].strip() + "\n"
+                toWrite[-1] = formattedLine(toWrite[-1]) + "\n"
             toWrite.append("\n")
             handleNote()
     os.remove(file)
